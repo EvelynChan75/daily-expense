@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="快速記帳" />
+  <title>日常快速記帳</title>
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --card: #ffffff;
+      --primary: #4a6b5d;
+      --primary-hover: #3b574b;
+      --text: #2c2c2c;
+      --muted: #8a8883;
+      --border: #e5e2dc;
+      --accent-bg: #eef3f0;
+      --success: #2e7d32;
+      --error: #c62828;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 4px 2px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .date-badge {
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--card);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+      color: var(--text);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    input[type="number"] {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    /* 常用項目快速標籤 */
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .tag-btn:active {
+      background: var(--accent-bg);
+    }
+
+    /* 分類按鈕網格 */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .cat-btn {
+      padding: 10px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .cat-btn.active {
+      background: var(--accent-bg);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+      background: var(--primary-hover);
+    }
+
+    .submit-btn:disabled {
+      background: #b5c2bc;
+      cursor: not-allowed;
+    }
+
+    /* 狀態提示訊息 */
+    .toast {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+
+    .toast.success {
+      display: block;
+      background: #e8f5e9;
+      color: var(--success);
+    }
+
+    .toast.error {
+      display: block;
+      background: #ffebee;
+      color: var(--error);
+    }
+
+    /* 本機近期暫存紀錄 */
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .history-header h2 {
+      font-size: 14px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: var(--muted);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .item-meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .item-amount {
+      font-weight: 700;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>日常快速記帳</h1>
+      <span class="date-badge" id="todayDate"></span>
+    </header>
+
+    <div class="card">
+      <form id="expenseForm">
+        <div class="form-group">
+          <label for="amountInput">金額 (TWD)</label>
+          <input type="number" id="amountInput" inputmode="decimal" placeholder="0" required />
+        </div>
+
+        <div class="form-group">
+          <label for="itemInput">消費項目</label>
+          <input type="text" id="itemInput" placeholder="例如：午餐、全聯買菜、捷運" required />
+          <div class="quick-tags">
+            <button type="button" class="tag-btn" data-item="早餐" data-cat="餐飲">早餐</button>
+            <button type="button" class="tag-btn" data-item="午餐" data-cat="餐飲">午餐</button>
+            <button type="button" class="tag-btn" data-item="晚餐" data-cat="餐飲">晚餐</button>
+            <button type="button" class="tag-btn" data-item="咖啡飲料" data-cat="餐飲">咖啡飲料</button>
+            <button type="button" class="tag-btn" data-item="超市買菜" data-cat="家用/孩子">超市買菜</button>
+            <button type="button" class="tag-btn" data-item="交通費" data-cat="交通">交通費</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>消費分類</label>
+          <div class="category-grid" id="categoryGrid">
+            <button type="button" class="cat-btn active" data-val="餐飲">餐飲</button>
+            <button type="button" class="cat-btn" data-val="家用/孩子">家用/孩子</button>
+            <button type="button" class="cat-btn" data-val="交通">交通</button>
+            <button type="button" class="cat-btn" data-val="購物娛樂">購物娛樂</button>
+            <button type="button" class="cat-btn" data-val="固定帳單">固定帳單</button>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">送出並寫入 Google Sheets</button>
+        <div class="toast" id="toastMsg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="history-header">
+        <h2>本機最近記帳紀錄（同步確認）</h2>
+        <button type="button" class="clear-btn" id="clearHistoryBtn">清除顯示</button>
+      </div>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 請將以下參數替換為你自己的 Google 表單設定
+    // ==========================================
+    const GOOGLE_FORM_CONFIG = {
+      // 將原本表單網址最後的 /viewform 改為 /formResponse
+      formUrl: "https://docs.google.com/forms/d/e/你的表單ID/formResponse",
+      entryItem: "entry.123456",      // 對應「消費項目」的 entry 代碼
+      entryAmount: "entry.789012",    // 對應「金額」的 entry 代碼
+      entryCategory: "entry.345678"   // 對應「分類」的 entry 代碼
+    };
+
+    // 顯示今日日期
+    const now = new Date();
+    document.getElementById("todayDate").textContent =
+      `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+
+    let selectedCategory = "餐飲";
+    const catButtons = document.querySelectorAll(".cat-btn");
+    const itemInput = document.getElementById("itemInput");
+    const amountInput = document.getElementById("amountInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const toastMsg = document.getElementById("toastMsg");
+
+    // 切換分類按鈕
+    function selectCategory(catName) {
+      selectedCategory = catName;
+      catButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.val === catName);
+      });
+    }
+
+    catButtons.forEach(btn => {
+      btn.addEventListener("click", () => selectCategory(btn.dataset.val));
+    });
+
+    // 點擊常用項目快速標籤（自動帶入名稱與對應分類）
+    document.querySelectorAll(".tag-btn").forEach(tag => {
+      tag.addEventListener("click", () => {
+        itemInput.value = tag.dataset.item;
+        if (tag.dataset.cat) selectCategory(tag.dataset.cat);
+        if (!amountInput.value) amountInput.focus();
+      });
+    });
+
+    // 本機暫存紀錄管理 (LocalStorage)
+    const STORAGE_KEY = "quick_bookkeeping_logs";
+
+    function renderHistory() {
+      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const listEl = document.getElementById("historyList");
+      if (logs.length === 0) {
+        listEl.innerHTML = `<li class="history-item" style="color:#8a8883; justify-content:center;">尚無本機紀錄</li>`;
+        return;
+      }
+      listEl.innerHTML = logs.map(log => `
+        <li class="history-item">
+          <div class="item-left">
+            <span>${log.item}</span>
+            <span class="item-meta">${log.category} ・ ${log.time}</span>
+          </div>
+          <span class="item-amount">$${Number(log.amount).toLocaleString()}</span>
+        </li>
+      `).join("");
+    }
+
+    function saveLocalLog(item, amount, category) {
+      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const t = new Date();
+      const timeStr = `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+      logs.unshift({ item, amount, category, time: timeStr });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(0, 10)));
+      renderHistory();
+    }
+
+    document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    });
+
+    // 顯示提示訊息
+    function showToast(text, type) {
+      toastMsg.textContent = text;
+      toastMsg.className = `toast ${type}`;
+      setTimeout(() => { toastMsg.className = "toast"; }, 3500);
+    }
+
+    // 送出表單至 Google Forms
+    document.getElementById("expenseForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const item = itemInput.value.trim();
+      const amount = amountInput.value.trim();
+      if (!item || !amount) return;
+
+      if (GOOGLE_FORM_CONFIG.formUrl.includes("你的表單ID")) {
+        showToast("請先在程式碼中填入你的 Google 表單網址與 entry 代碼！", "error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "傳送中...";
+
+      const formData = new URLSearchParams();
+      formData.append(GOOGLE_FORM_CONFIG.entryItem, item);
+      formData.append(GOOGLE_FORM_CONFIG.entryAmount, amount);
+      formData.append(GOOGLE_FORM_CONFIG.entryCategory, selectedCategory);
+
+      try {
+        // 使用 no-cors 模式靜默送出至 Google Forms
+        await fetch(GOOGLE_FORM_CONFIG.formUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString()
+        });
+
+        saveLocalLog(item, amount, selectedCategory);
+        showToast(`✅ 已記帳：${item} $${amount}（${selectedCategory}）`, "success");
+
+        // 清空欄位準備下一筆
+        amountInput.value = "";
+        itemInput.value = "";
+      } catch (err) {
+        showToast("❌ 網路傳送失敗，請檢查連線後再試", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "送出並寫入 Google Sheets";
+      }
+    });
+
+    // 初始化載入本機紀錄
+    renderHistory();
+  </script>
+</body>
+</html>
