@@ -49,6 +49,12 @@
       padding: 4px 2px;
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     header h1 {
       font-size: 20px;
       margin: 0;
@@ -57,12 +63,31 @@
     }
 
     .date-badge {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--muted);
       background: var(--card);
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 20px;
       border: 1px solid var(--border);
+    }
+
+    .sheet-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--accent-bg);
+      border: 1px solid var(--primary);
+      padding: 5px 10px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+
+    .sheet-link-btn:active {
+      opacity: 0.75;
     }
 
     .card {
@@ -266,8 +291,11 @@
 <body>
   <div class="container">
     <header>
-      <h1>日常快速記帳</h1>
-      <span class="date-badge" id="todayDate"></span>
+      <div class="header-left">
+        <h1>日常快速記帳</h1>
+        <span class="date-badge" id="todayDate"></span>
+      </div>
+      <a href="#" id="sheetLinkBtn" class="sheet-link-btn" target="_blank" rel="noopener">📊 試算表</a>
     </header>
 
     <div class="card">
@@ -279,15 +307,15 @@
 
         <div class="form-group">
           <label for="itemInput">消費項目</label>
-          <input type="text" id="itemInput" placeholder="例如：午餐、全聯買菜、捷運" required />
+          <input type="text" id="itemInput" placeholder="例如：午餐、全聯買菜、看診" required />
           <div class="quick-tags">
             <button type="button" class="tag-btn" data-item="早餐" data-cat="餐飲">早餐</button>
             <button type="button" class="tag-btn" data-item="午餐" data-cat="餐飲">午餐</button>
             <button type="button" class="tag-btn" data-item="晚餐" data-cat="餐飲">晚餐</button>
             <button type="button" class="tag-btn" data-item="咖啡飲料" data-cat="餐飲">咖啡飲料</button>
             <button type="button" class="tag-btn" data-item="超市買菜" data-cat="家用/孩子">超市買菜</button>
+            <button type="button" class="tag-btn" data-item="看診掛號" data-cat="醫療費">看診掛號</button>
             <button type="button" class="tag-btn" data-item="交通費" data-cat="交通">交通費</button>
-            <button type="button" class="tag-btn" data-item="醫療費" data-cat="醫療">醫療費</button>
           </div>
         </div>
 
@@ -318,15 +346,27 @@
   </div>
 
   <script>
-// ==========================================
-    // 1. 已填入你的專屬 Google 表單參數
+    // ==========================================
+    // 1. Google 表單與試算表設定
     // ==========================================
     const GOOGLE_FORM_CONFIG = {
       formUrl: "https://docs.google.com/forms/d/e/1FAIpQLScWMWMHNLNSiiidGG4s_jz6U1wt-o12nHImoB2ke8QPJOeiew/formResponse",
       entryItem: "entry.884889737",      // 消費項目
       entryAmount: "entry.4551575",      // 金額
-      entryCategory: "entry.933445705"   // 分類
+      entryCategory: "entry.933445705",  // 分類
+      sheetUrl: "請貼上你的 Google Sheets 試算表網址"
     };
+
+    // 綁定右上角試算表按鈕連結
+    const sheetLinkBtn = document.getElementById("sheetLinkBtn");
+    if (GOOGLE_FORM_CONFIG.sheetUrl && GOOGLE_FORM_CONFIG.sheetUrl.startsWith("http")) {
+      sheetLinkBtn.href = GOOGLE_FORM_CONFIG.sheetUrl;
+    } else {
+      sheetLinkBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        showToast("請先在程式碼的 sheetUrl 填入你的試算表網址！", "error");
+      });
+    }
 
     // 顯示今日日期
     const now = new Date();
@@ -352,7 +392,7 @@
       btn.addEventListener("click", () => selectCategory(btn.dataset.val));
     });
 
-    // 點擊常用項目快速標籤（自動帶入名稱與對應分類）
+    // 點擊常用項目快速標籤
     document.querySelectorAll(".tag-btn").forEach(tag => {
       tag.addEventListener("click", () => {
         itemInput.value = tag.dataset.item;
@@ -411,11 +451,6 @@
       const amount = amountInput.value.trim();
       if (!item || !amount) return;
 
-      if (GOOGLE_FORM_CONFIG.formUrl.includes("你的表單ID")) {
-        showToast("請先在程式碼中填入你的 Google 表單網址與 entry 代碼！", "error");
-        return;
-      }
-
       submitBtn.disabled = true;
       submitBtn.textContent = "傳送中...";
 
@@ -425,7 +460,6 @@
       formData.append(GOOGLE_FORM_CONFIG.entryCategory, selectedCategory);
 
       try {
-        // 使用 no-cors 模式靜默送出至 Google Forms
         await fetch(GOOGLE_FORM_CONFIG.formUrl, {
           method: "POST",
           mode: "no-cors",
@@ -436,7 +470,6 @@
         saveLocalLog(item, amount, selectedCategory);
         showToast(`✅ 已記帳：${item} $${amount}（${selectedCategory}）`, "success");
 
-        // 清空欄位準備下一筆
         amountInput.value = "";
         itemInput.value = "";
       } catch (err) {
